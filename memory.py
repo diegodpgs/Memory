@@ -13,6 +13,7 @@ class Memory:
 		self.readCorpora(corpora_file_name)
 		self.states = {'1':'Very Good','2':'Good','3':'Some Tired',
 					   '4':'Tired','5':'Very Tired','6':'Some Sleep','7':'Sleep','8':'Very Sleep'}
+		self.errors = []
 
 	def readCorpora(self,corpora_file_name):
 		f = open(corpora_file_name).read().lower()
@@ -54,7 +55,6 @@ class Memory:
 
 	def getPreviousRecord(self,position):
 		self.records.sort()
-		print position,len(self.records)
 		return self.records[::-1][position]
 
 	def getAttr(self,record,attr):
@@ -66,23 +66,29 @@ class Memory:
 			if attr == at:
 				return record[index]
 
+	def printTable(self,record):
+		state = self.states[self.getAttr(record,'state')]
+		mark = str(self.getAttr(record,'mark'))
+		word_size = str(self.getAttr(record,'word_size'))
+		complexity = '%1.2f' % (self.getAttr(record,'complexity'))
+		timing = '%1.2f' % (self.getAttr(record,'timing'))
+		day = str(time.localtime().tm_yday - self.getAttr(record,'days'))
+
+
+		print '%s %s %s %s %s   |%s ' % (mark.rjust(4),
+													word_size.rjust(4),
+													complexity.rjust(8),
+													timing.rjust(8),
+													day.rjust(5),
+													state.rjust(11))
+
 	def printRecord(self,record,table_print=False):
 
 		
 		if table_print:
-			state = self.states[self.getAttr(record,'state')]
-
-
-			print '%s %s %s %s %s %d days ago' % (str(self.getAttr(record,'mark')).rjust(3),
-							 				   str(self.getAttr(record,'word_size')).rjust(3),
-							 				   str(self.getAttr(record,'complexity')).rjust(3),
-							 				   str(self.getAttr(record,'timing')).rjust(3),
-							 				   str(state).rjust(10),
-							 				   time.localtime().tm_yday - self.getAttr(record,'days'))
-
-
+			self.printTable(record)
 		else:
-			print '%d Days ago  \n' % (time.localtime().tm_yday - self.getAttr(record,'days'))
+			print '\n     %d Days ago   ' % (time.localtime().tm_yday - self.getAttr(record,'days'))
 			print 'Mark:        %d' % self.getAttr(record,'mark')
 			print 'Word Size:   %d' % self.getAttr(record,'word_size')
 			print 'Complexity:  %1.2f' % self.getAttr(record,'complexity')
@@ -94,9 +100,10 @@ class Memory:
 	def printRecords(self):
 		self.records.sort()
 		
+		print '\n\n\nRank|Words|Char|Complexity|Timing|Days Ago|   State'
 		for index in xrange(len(self.records)):
 			r = self.records[::-1][index]
-			print '%s' % (str(index+1).rjust(3)),
+			print '%s |' % (str(index+1).rjust(3)),
 			self.printRecord(r,True	)
 
 	def getMostRecent(self,timing,worst=False):
@@ -121,7 +128,7 @@ class Memory:
 			r_recent = recents[index]
 			
 		 	actual_data = (b,ws,timing)
-		 	recent_data = (r_recent[1],r_recent[2],r_recent[3],r_recent[4],r_recent[5],time.localtime().tm_yday-(365-r_recent[0]))
+		 	recent_data = (r_recent[1],r_recent[2],r_recent[3],r_recent[4],r_recent[5],'%d days ago' % (time.localtime().tm_yday-(365-r_recent[0])))
 		 	
 
 			if not worst:
@@ -145,7 +152,7 @@ class Memory:
 		position = self.getPositionINDEX(bucket_size,mark,timing)
 		
 
-		print 'You have achieved %d words with total size %d and timing: %1.2f' % (mark,bucket_size,timing)
+		print '######\n You have achieved %d words\n with total size %d\n timing: %1.2f and complexity %1.2f' % (mark,bucket_size,timing,self.complexity())
 
 		if position == len(self.records):
 			print "This is the worst result ever"
@@ -163,6 +170,7 @@ class Memory:
 				self.getMostRecent(timing,True)
 
 
+			print '\n----------The previous best results was------\n'
 			self.printRecord(previousRecord)
 
 	def generateNewWord(self):
@@ -182,7 +190,8 @@ class Memory:
 
 	def processWord(self):
 
-		for w in self.bucket:
+		for index in xrange(len(self.bucket)):
+			w = self.bucket[index]
 			word = raw_input(': ')
 
 			if word != w:
@@ -191,6 +200,7 @@ class Memory:
 				print ' '.join(self.bucket)
 				time.sleep(1+len(self.bucket)/2.5)
 				print '\n'*120
+				self.errors.append((self.bucket[:],index))
 				return 'ERROR'
 
 		return 'OK'
@@ -198,7 +208,7 @@ class Memory:
 	def writeRecords(self,timing):
 		
 		state = raw_input("Type your state:\n\n1:Very Good\n2:Good\n3:Some Tired\n4:Tired\n5:Very Tired\n6:Some Sleep\n7:Sleep\n8:Very Sleep\n\n:: ")
-		self.write_records.write('%s,%s,%d,%d,%s,%1.3f,%1.2f,%s\n' % (time.strftime('%H:%M:%S'),
+		self.write_records.write('%s,%s,%d,%d,%s,%1.2f,%1.2f,%s\n' % (time.strftime('%H:%M:%S'),
 														time.strftime('%d/%m/%Y'),
 														time.localtime().tm_yday,
 														len(self.bucket)-1,
@@ -225,7 +235,7 @@ class Memory:
 
 			errors = 0
 
-			while errors < 5:
+			while errors < 2:
 
 				print 'Type the words: '
 
@@ -258,6 +268,10 @@ class Memory:
 				
 				if option == 'y':
 					self.printRecords()
+
+				errors_file = open('word_errors.txt','a')
+				for line in self.errors:
+					errors_file.write('%s;%d\n' % (",".join(line[0]),line[1]))
 
 				break
 
@@ -304,7 +318,6 @@ class Memory:
 if "__main__":
 	M = Memory('records.txt','corpora.txt')
 	M.play()
-	#compute wrong words
 
 
 

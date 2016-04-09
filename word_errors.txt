@@ -1,0 +1,5 @@
+to,problem,jogger,summer;3
+to,problem,jogger,summer,work,i,often;3
+to,problem,jogger,summer,work,i,often;6
+to,problem,jogger,summer,work,i,often,thought,james,noticing;1
+to,problem,jogger,summer,work,i,often,thought,james,noticing;2had,and,responsible,them;3
