@@ -1,7 +1,10 @@
 import time
 import random
 import nltk
+from complexity import Complexity
 
+#@Author: Diego Pedro
+#@Date  : April 10, 2016
 class Memory:
 
 	def __init__(self,records_file_name,corpora_file_name):
@@ -14,6 +17,7 @@ class Memory:
 		self.states = {'1':'Very Good','2':'Good','3':'Some Tired',
 					   '4':'Tired','5':'Very Tired','6':'Some Sleep','7':'Sleep','8':'Very Sleep'}
 		self.errors = []
+		self._complex_ = Complexity(self.dictionary)
 
 	def readCorpora(self,corpora_file_name):
 		f = open(corpora_file_name).read().lower()
@@ -24,6 +28,7 @@ class Memory:
 		records_file = file_records.read().split('\n')
 
 		for record in records_file[1:-1]:
+
 			record_time = record.split(',')[0]
 			record_date = record.split(',')[1]
 			record_days = int(record.split(',')[2])
@@ -235,7 +240,7 @@ class Memory:
 
 			errors = 0
 
-			while errors < 2:
+			while errors < 5:
 
 				print 'Type the words: '
 
@@ -276,35 +281,7 @@ class Memory:
 				break
 
 	def wordComplexity(self,word):
-		vowel = 'aeiou'
-		vowel_consoants = 'nmsl'
-		consoants = 'bcdfghjkpqrtvxz'
-		complexity = 0
-		consoant_index = 0
-
-		for index in xrange(1,len(word)):
-			A = word[index-1]
-			B = word[index]
-
-			if A in vowel and B in vowel:
-				complexity -= 0.3
-				consoant_index = 0
-			elif A in vowel and B in vowel_consoants:
-				complexity -= 0.2
-				consoant_index = 0
-
-			elif A in consoants and B in vowel:
-				complexity -= 0.5
-				consoant_index = 0
-
-			elif A in consoants and B in consoants or (A in vowel_consoants and B in vowel_consoants):
-				consoant_index += 1
-				complexity += consoant_index
-
-			elif A in vowel_consoants and B in consoants:
-				complexity += consoant_index
-
-		return complexity*(len(word)/2)
+		return self._complex_.compute(word)
 
 	def complexity(self):
 		total_complexity = 0
@@ -312,12 +289,28 @@ class Memory:
 		for word in self.bucket[0:-1]:
 			total_complexity += self.wordComplexity(word)
 
-		return 10 + (total_complexity/float(len(self.bucket[0:-1])))
+		return  (total_complexity/float(len(self.bucket[0:-1])))*10
 		
 
 if "__main__":
-	M = Memory('records.txt','corpora.txt')
-	M.play()
+	#PROPOSE A BETTER COMPLEXITY USING SPEECH PARSER PRE(she) + VER(is) + ADV(very) + ADJ(pretty) 
+	# M = Memory('records.txt','corpora.txt')
+	# #M.play()
+
+	# rec = open('records.txt').read().split('\n')
+	
+	# for r in rec[1:-1]:
+	# 	r = r.split(',')
+	# 	words =  r[7:]
+	# 	words.append('$')
+	# 	M.bucket = words
+	# 	p1 = r[0:6]
+	# 	c = M.complexity()
+	# 	p2 = r[7:]
+
+	# 	print '%s,%1.2f,%s' % (",".join(p1),c,",".join(p2))
+	# M.printRecords()
+
 
 
 
